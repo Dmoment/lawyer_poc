@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: insurance-policy-analyzer
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    envVars:
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: CHROMA_PERSIST_DIRECTORY
+        value: /opt/render/project/src/chroma_db
+      - key: UPLOAD_DIRECTORY
+        value: /opt/render/project/src/uploads
+      - key: MAX_FILE_SIZE_MB
+        value: "50"
+      - key: ALLOWED_EXTENSIONS
+        value: "pdf"
+    healthCheckPath: /health

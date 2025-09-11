@@ -127,6 +127,12 @@ npm start
 
 ## Production Deployment
 
+### Render Deployment (Recommended)
+```bash
+# Deploy to Render with one command
+./render-deploy.sh
+```
+
 ### Docker Deployment
 ```bash
 # Build and run with Docker Compose
@@ -137,6 +143,11 @@ docker-compose up -d
 - `GOOGLE_API_KEY`: Your Google Gemini API key
 - `CHROMA_PERSIST_DIRECTORY`: Vector database storage path
 - `UPLOAD_DIRECTORY`: File upload storage path
+
+### Deployment Options
+- **Render**: Free tier, always-on, easy setup
+- **Railway**: Fast deployment, good for demos
+- **Docker**: Self-hosted, full control
 
 ## Troubleshooting
 
