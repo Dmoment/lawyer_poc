@@ -1,22 +1,24 @@
 #!/bin/bash
 
-# Insurance Policy Document Analyzer - Startup Script
+# Insurance Policy Document Analyzer - Startup Script (Powered by Google Gemini)
 
-echo "🚀 Starting Insurance Policy Document Analyzer..."
+echo "🚀 Starting Insurance Policy Document Analyzer with Google Gemini..."
 
 # Check if .env file exists
 if [ ! -f .env ]; then
     echo "⚠️  .env file not found. Creating from template..."
     cp env_example.txt .env
-    echo "📝 Please edit .env file and add your OpenAI API key"
+    echo "📝 Please edit .env file and add your Google Gemini API key"
+    echo "   Get your API key from: https://makersuite.google.com/app/apikey"
     echo "   Then run this script again."
     exit 1
 fi
 
-# Check if OpenAI API key is set
-if ! grep -q "OPENAI_API_KEY=sk-" .env; then
-    echo "⚠️  OpenAI API key not found in .env file"
-    echo "   Please add your OpenAI API key to .env file"
+# Check if Google API key is set
+if ! grep -q "GOOGLE_API_KEY=AIza" .env; then
+    echo "⚠️  Google Gemini API key not found in .env file"
+    echo "   Please add your Google Gemini API key to .env file"
+    echo "   Get your API key from: https://makersuite.google.com/app/apikey"
     exit 1
 fi
 
@@ -49,10 +51,11 @@ npm start &
 FRONTEND_PID=$!
 
 echo ""
-echo "✅ Application started successfully!"
+echo "✅ Application started successfully with Google Gemini!"
 echo "   Frontend: http://localhost:3000"
 echo "   Backend API: http://localhost:8000"
 echo "   API Docs: http://localhost:8000/docs"
+echo "   🤖 Powered by Google Gemini 1.5 Flash"
 echo ""
 echo "Press Ctrl+C to stop all services"
 

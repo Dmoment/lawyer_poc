@@ -4,8 +4,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    # OpenAI Configuration
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    # Google Gemini Configuration
+    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
     
     # File Upload Configuration
     UPLOAD_DIRECTORY = os.getenv("UPLOAD_DIRECTORY", "./uploads")
@@ -21,7 +21,7 @@ class Config:
     
     # Model Configuration
     EMBEDDING_MODEL = "text-embedding-ada-002"
-    LLM_MODEL = "gpt-4o-mini"
+    LLM_MODEL = "gemini-1.5-flash"
     
     # Citation Configuration
     CITATION_PREFIX = "Page"

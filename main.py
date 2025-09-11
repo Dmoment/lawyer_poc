@@ -107,6 +107,26 @@ async def get_document(document_id: str):
 async def query_document(query_request: QueryRequest):
     """Query documents for answers with citations"""
     try:
+        # If document_id is provided, try to find the actual UUID
+        if query_request.document_id:
+            # Check if it's already a UUID (stored in documents_store)
+            if query_request.document_id in documents_store:
+                # It's already a UUID, use as is
+                pass
+            else:
+                # It might be a filename, try to find the corresponding UUID
+                found_uuid = None
+                for uuid, doc_info in documents_store.items():
+                    if doc_info.filename == query_request.document_id:
+                        found_uuid = uuid
+                        break
+                
+                if found_uuid:
+                    query_request.document_id = found_uuid
+                else:
+                    # If no document found, set to None to search all documents
+                    query_request.document_id = None
+        
         response = rag_system.query_document(query_request)
         return response
     except Exception as e:

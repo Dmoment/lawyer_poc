@@ -1,4 +1,4 @@
-from openai import OpenAI
+import google.generativeai as genai
 from typing import List, Dict, Any
 import time
 from config import Config
@@ -10,11 +10,12 @@ class RAGSystem:
         self.config = Config()
         self.document_processor = DocumentProcessor()
         
-        # Initialize OpenAI client
-        self.client = OpenAI(api_key=self.config.OPENAI_API_KEY)
+        # Configure Gemini
+        genai.configure(api_key=self.config.GOOGLE_API_KEY)
+        self.model = genai.GenerativeModel(self.config.LLM_MODEL)
     
     def generate_answer(self, query: str, context_chunks: List[Dict[str, Any]]) -> str:
-        """Generate answer using OpenAI GPT-4 with context"""
+        """Generate answer using Google Gemini with context"""
         
         # Prepare context from chunks
         context_text = "\n\n".join([
@@ -22,8 +23,8 @@ class RAGSystem:
             for chunk in context_chunks
         ])
         
-        # Create system prompt
-        system_prompt = """You are a legal document analysis assistant specializing in insurance policies. 
+        # Create prompt for Gemini
+        prompt = f"""You are a legal document analysis assistant specializing in insurance policies. 
         Your task is to answer questions based on the provided insurance policy document excerpts.
         
         Guidelines:
@@ -31,10 +32,9 @@ class RAGSystem:
         2. If the answer is not found in the document, clearly state this
         3. Be precise and professional in your responses
         4. Focus on the most relevant information from the document
-        5. Use legal terminology appropriately when found in the document"""
+        5. Use legal terminology appropriately when found in the document
         
-        # Create user prompt
-        user_prompt = f"""Based on the following insurance policy document excerpts, please answer this question: {query}
+        Question: {query}
 
         Document excerpts:
         {context_text}
@@ -42,25 +42,19 @@ class RAGSystem:
         Please provide a comprehensive answer with specific details from the document."""
         
         try:
-            response = self.client.chat.completions.create(
-                model=self.config.LLM_MODEL,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                max_tokens=1000,
-                temperature=0.1
+            response = self.model.generate_content(
+                prompt,
+                generation_config=genai.types.GenerationConfig(
+                    max_output_tokens=1000,
+                    temperature=0.1
+                )
             )
             
-            return response.choices[0].message.content.strip()
+            return response.text.strip()
         
         except Exception as e:
             error_msg = str(e)
-            if "quota" in error_msg.lower() or "billing" in error_msg.lower():
-                # Fallback response when API quota is exceeded
-                return f"Based on the document content, I found relevant information about your question. However, I'm currently unable to generate a detailed AI response due to API quota limitations. Please check the citations below for the relevant document sections that contain information about your query."
-            else:
-                return f"Error generating answer: {error_msg}"
+            return f"Error generating answer: {error_msg}"
     
     def calculate_confidence_score(self, context_chunks: List[Dict[str, Any]]) -> float:
         """Calculate confidence score based on relevance of context chunks"""

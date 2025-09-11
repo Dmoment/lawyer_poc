@@ -1,12 +1,12 @@
 # Insurance Policy Document Analyzer
 
-A comprehensive POC system for analyzing insurance policy documents using AI-powered document processing and retrieval-augmented generation (RAG).
+A comprehensive POC system for analyzing insurance policy documents using AI-powered document processing and retrieval-augmented generation (RAG) powered by Google Gemini.
 
 ## Features
 
 - **Document Upload**: Upload PDF insurance policy documents (up to 40 pages, 50MB max)
 - **Intelligent Processing**: Automatic text extraction, chunking, and vectorization
-- **AI-Powered Q&A**: Ask questions about policy content with accurate answers
+- **AI-Powered Q&A**: Ask questions about policy content with accurate answers using Google Gemini
 - **Citation References**: Get precise page and section references for all answers
 - **Modern UI**: Clean, responsive interface built with React and Tailwind CSS
 
@@ -15,7 +15,7 @@ A comprehensive POC system for analyzing insurance policy documents using AI-pow
 ### Backend (FastAPI)
 - **Document Processing**: PyPDF2/pdfplumber for PDF text extraction
 - **Vector Database**: ChromaDB for semantic search
-- **LLM Integration**: OpenAI GPT-4 for Q&A generation
+- **LLM Integration**: Google Gemini 1.5 Flash for Q&A generation
 - **API**: RESTful endpoints for document management and queries
 
 ### Frontend (React)
@@ -29,7 +29,7 @@ A comprehensive POC system for analyzing insurance policy documents using AI-pow
 ### Prerequisites
 - Python 3.8+
 - Node.js 16+
-- OpenAI API key
+- Google Gemini API key
 
 ### Installation
 
@@ -42,7 +42,8 @@ pip install -r requirements.txt
 2. **Setup environment variables**:
 ```bash
 cp env_example.txt .env
-# Edit .env and add your OpenAI API key
+# Edit .env and add your Google Gemini API key
+# Get your API key from: https://makersuite.google.com/app/apikey
 ```
 
 3. **Start the backend server**:
@@ -133,14 +134,14 @@ docker-compose up -d
 ```
 
 ### Environment Variables
-- `OPENAI_API_KEY`: Your OpenAI API key
+- `GOOGLE_API_KEY`: Your Google Gemini API key
 - `CHROMA_PERSIST_DIRECTORY`: Vector database storage path
 - `UPLOAD_DIRECTORY`: File upload storage path
 
 ## Troubleshooting
 
 ### Common Issues
-1. **OpenAI API Key**: Ensure valid API key is set
+1. **Google Gemini API Key**: Ensure valid API key is set
 2. **File Size**: Check file size limits (50MB default)
 3. **PDF Processing**: Ensure PDFs are text-based, not scanned images
 4. **Memory Usage**: Large documents may require more RAM
