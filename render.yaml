@@ -3,7 +3,8 @@ services:
     name: insurance-policy-analyzer
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt
+    pythonVersion: "3.11"
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
     startCommand: python main.py
     envVars:
       - key: GOOGLE_API_KEY
