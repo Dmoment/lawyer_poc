@@ -23,4 +23,5 @@ pdfplumber==0.10.3
 
 # Text processing
 sentence-transformers==2.2.2
+huggingface-hub==0.16.4
 tiktoken==0.5.1

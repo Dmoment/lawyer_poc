@@ -2,6 +2,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse
 import os
 import uuid
 from datetime import datetime
@@ -33,12 +34,24 @@ rag_system = RAGSystem()
 os.makedirs(config.UPLOAD_DIRECTORY, exist_ok=True)
 os.makedirs(config.CHROMA_PERSIST_DIRECTORY, exist_ok=True)
 
+# Mount static files for React frontend
+if os.path.exists("frontend/build"):
+    app.mount("/static", StaticFiles(directory="frontend/build/static"), name="static")
+
 # Store for document metadata
 documents_store = {}
 
 @app.get("/")
 async def read_root():
+    """Serve the React frontend or API info"""
+    if os.path.exists("frontend/build/index.html"):
+        return FileResponse("frontend/build/index.html")
     return {"message": "Insurance Policy Document Analyzer API", "version": "1.0.0"}
+
+@app.get("/health")
+async def health():
+    """Health check endpoint"""
+    return {"status": "healthy", "message": "API is running"}
 
 @app.post("/upload", response_model=DocumentInfo)
 async def upload_document(file: UploadFile = File(...)):
