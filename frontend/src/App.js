@@ -38,11 +38,11 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
       <Header />
       
-      <main className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <main className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Left Column - Document Management */}
           <div className="lg:col-span-1 space-y-6">
             <DocumentUpload 
@@ -60,7 +60,7 @@ function App() {
           </div>
           
           {/* Right Column - Query Interface */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-3">
             <QueryInterface 
               selectedDocument={selectedDocument}
               documents={documents}
@@ -68,6 +68,17 @@ function App() {
           </div>
         </div>
       </main>
+      
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-200 mt-16">
+        <div className="container mx-auto px-6 py-8">
+          <div className="text-center text-gray-600">
+            <p className="text-sm">
+              © 2024 Insurance Policy Analyzer. Powered by AI technology for legal document analysis.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
