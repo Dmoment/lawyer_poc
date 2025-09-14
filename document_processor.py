@@ -16,14 +16,30 @@ class DocumentProcessor:
         self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
         self.tokenizer = tiktoken.get_encoding("cl100k_base")
         
-        # Initialize ChromaDB
-        self.chroma_client = chromadb.PersistentClient(
-            path=self.config.CHROMA_PERSIST_DIRECTORY
-        )
-        self.collection = self.chroma_client.get_or_create_collection(
-            name="insurance_documents",
-            metadata={"hnsw:space": "cosine"}
-        )
+        # Initialize ChromaDB with error handling
+        try:
+            self.chroma_client = chromadb.PersistentClient(
+                path=self.config.CHROMA_PERSIST_DIRECTORY
+            )
+            self.collection = self.chroma_client.get_or_create_collection(
+                name="insurance_documents",
+                metadata={"hnsw:space": "cosine"}
+            )
+        except Exception as e:
+            print(f"ChromaDB initialization error: {e}")
+            # Clear the database directory and retry
+            import shutil
+            if os.path.exists(self.config.CHROMA_PERSIST_DIRECTORY):
+                shutil.rmtree(self.config.CHROMA_PERSIST_DIRECTORY)
+            os.makedirs(self.config.CHROMA_PERSIST_DIRECTORY, exist_ok=True)
+            
+            self.chroma_client = chromadb.PersistentClient(
+                path=self.config.CHROMA_PERSIST_DIRECTORY
+            )
+            self.collection = self.chroma_client.get_or_create_collection(
+                name="insurance_documents",
+                metadata={"hnsw:space": "cosine"}
+            )
     
     def extract_text_from_pdf(self, file_path: str) -> List[Tuple[str, int]]:
         """Extract text from PDF with page numbers"""
@@ -144,30 +160,45 @@ class DocumentProcessor:
             where=where_clause if where_clause else None
         )
         
-        # Format results
+        # Format results and filter by relevance threshold
         formatted_results = []
+        relevance_threshold = 0.3  # Only show results with >30% relevance
+        
         for i in range(len(results['documents'][0])):
-            result = {
-                "content": results['documents'][0][i],
-                "metadata": results['metadatas'][0][i],
-                "distance": results['distances'][0][i],
-                "relevance_score": 1 - results['distances'][0][i]  # Convert distance to relevance
-            }
-            formatted_results.append(result)
+            distance = results['distances'][0][i]
+            relevance_score = 1 - distance  # Convert distance to relevance
+            
+            # Only include results above relevance threshold
+            if relevance_score >= relevance_threshold:
+                result = {
+                    "content": results['documents'][0][i],
+                    "metadata": results['metadatas'][0][i],
+                    "distance": distance,
+                    "relevance_score": relevance_score
+                }
+                formatted_results.append(result)
         
         return formatted_results
     
     def get_citations(self, search_results: List[Dict[str, Any]]) -> List[Citation]:
-        """Convert search results to citation format"""
+        """Convert search results to citation format and remove duplicates"""
         citations = []
+        seen_pages = set()  # Track pages to avoid duplicates
         
         for result in search_results:
+            page_number = result['metadata']['page_number']
+            
+            # Skip if we've already seen this page
+            if page_number in seen_pages:
+                continue
+                
             citation = Citation(
-                page_number=result['metadata']['page_number'],
+                page_number=page_number,
                 content=result['content'][:200] + "..." if len(result['content']) > 200 else result['content'],
                 relevance_score=result['relevance_score']
             )
             citations.append(citation)
+            seen_pages.add(page_number)
         
         # Sort by relevance score
         citations.sort(key=lambda x: x.relevance_score, reverse=True)

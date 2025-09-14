@@ -83,9 +83,10 @@ class RAGSystem:
             n_results=5
         )
         
+        # If no relevant results found (below threshold), return early
         if not search_results:
             return QueryResponse(
-                answer="No relevant information found in the document for your question.",
+                answer="No relevant information found in the document for your question. The question appears to be outside the scope of this insurance policy document.",
                 citations=[],
                 confidence_score=0.0,
                 processing_time=time.time() - start_time
@@ -94,9 +95,9 @@ class RAGSystem:
         # Generate answer using RAG
         answer = self.generate_answer(query_request.question, search_results)
         
-        # Generate citations
+        # Generate citations (only if we have relevant results)
         citations = []
-        if query_request.include_citations:
+        if query_request.include_citations and search_results:
             citations = self.document_processor.get_citations(search_results)
             # Limit citations as requested
             citations = citations[:query_request.max_citations]
