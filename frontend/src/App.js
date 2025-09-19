@@ -31,8 +31,8 @@ function App() {
   };
 
   const handleDocumentDeleted = (documentId) => {
-    setDocuments(prev => prev.filter(doc => doc.filename !== documentId));
-    if (selectedDocument && selectedDocument.filename === documentId) {
+    setDocuments(prev => prev.filter(doc => doc.document_id !== documentId));
+    if (selectedDocument && selectedDocument.document_id === documentId) {
       setSelectedDocument(null);
     }
   };
@@ -74,7 +74,7 @@ function App() {
         <div className="container mx-auto px-6 py-8">
           <div className="text-center text-gray-600">
             <p className="text-sm">
-              © 2024 Insurance Policy Analyzer. Powered by AI technology for legal document analysis.
+              © 2024 Document Analyzer. Powered by AI technology for document analysis.
             </p>
           </div>
         </div>

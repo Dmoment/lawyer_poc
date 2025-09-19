@@ -14,7 +14,7 @@ from models import DocumentInfo, QueryRequest, QueryResponse
 from document_processor import DocumentProcessor
 from rag_system import RAGSystem
 
-app = FastAPI(title="Insurance Policy Document Analyzer", version="1.0.0")
+app = FastAPI(title="Document Analyzer", version="1.0.0")
 
 # CORS middleware
 app.add_middleware(
@@ -46,7 +46,7 @@ async def read_root():
     """Serve the React frontend or API info"""
     if os.path.exists("frontend/build/index.html"):
         return FileResponse("frontend/build/index.html")
-    return {"message": "Insurance Policy Document Analyzer API", "version": "1.0.0"}
+    return {"message": "Document Analyzer API", "version": "1.0.0"}
 
 @app.get("/health")
 async def health():
@@ -55,7 +55,7 @@ async def health():
 
 @app.post("/upload", response_model=DocumentInfo)
 async def upload_document(file: UploadFile = File(...)):
-    """Upload and process an insurance policy document"""
+    """Upload and process a document"""
     
     # Validate file type
     if not file.filename.lower().endswith('.pdf'):
@@ -87,6 +87,7 @@ async def upload_document(file: UploadFile = File(...)):
         
         # Store document info
         document_info = DocumentInfo(
+            document_id=document_id,
             filename=file.filename,
             upload_date=datetime.now(),
             total_pages=result['total_pages'],
@@ -120,25 +121,9 @@ async def get_document(document_id: str):
 async def query_document(query_request: QueryRequest):
     """Query documents for answers with citations"""
     try:
-        # If document_id is provided, try to find the actual UUID
-        if query_request.document_id:
-            # Check if it's already a UUID (stored in documents_store)
-            if query_request.document_id in documents_store:
-                # It's already a UUID, use as is
-                pass
-            else:
-                # It might be a filename, try to find the corresponding UUID
-                found_uuid = None
-                for uuid, doc_info in documents_store.items():
-                    if doc_info.filename == query_request.document_id:
-                        found_uuid = uuid
-                        break
-                
-                if found_uuid:
-                    query_request.document_id = found_uuid
-                else:
-                    # If no document found, set to None to search all documents
-                    query_request.document_id = None
+        # If document_id is provided, verify it exists
+        if query_request.document_id and query_request.document_id not in documents_store:
+            query_request.document_id = None
         
         response = rag_system.query_document(query_request)
         return response

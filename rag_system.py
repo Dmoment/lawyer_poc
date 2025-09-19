@@ -24,15 +24,15 @@ class RAGSystem:
         ])
         
         # Create prompt for Gemini
-        prompt = f"""You are a legal document analysis assistant specializing in insurance policies. 
-        Your task is to answer questions based on the provided insurance policy document excerpts.
+        prompt = f"""You are a document analysis assistant that can work with any type of document. 
+        Your task is to answer questions based on the provided document excerpts.
         
         Guidelines:
         1. Provide accurate, specific answers based only on the provided document content
         2. If the answer is not found in the document, clearly state this
         3. Be precise and professional in your responses
         4. Focus on the most relevant information from the document
-        5. Use legal terminology appropriately when found in the document
+        5. Use appropriate terminology based on the document type (legal, technical, business, etc.)
         
         Question: {query}
 
@@ -86,7 +86,7 @@ class RAGSystem:
         # If no relevant results found (below threshold), return early
         if not search_results:
             return QueryResponse(
-                answer="No relevant information found in the document for your question. The question appears to be outside the scope of this insurance policy document.",
+                answer="No relevant information found in the document for your question. The question appears to be outside the scope of this document.",
                 citations=[],
                 confidence_score=0.0,
                 processing_time=time.time() - start_time

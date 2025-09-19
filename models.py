@@ -26,6 +26,7 @@ class QueryResponse(BaseModel):
     processing_time: float
 
 class DocumentInfo(BaseModel):
+    document_id: str
     filename: str
     upload_date: datetime
     total_pages: int

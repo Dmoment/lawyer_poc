@@ -101,6 +101,7 @@ class DocumentProcessor:
         # Extract text from PDF
         pages_text = self.extract_text_from_pdf(file_path)
         
+        
         if not pages_text:
             raise ValueError("No text could be extracted from the PDF")
         
@@ -162,7 +163,7 @@ class DocumentProcessor:
         
         # Format results and filter by relevance threshold
         formatted_results = []
-        relevance_threshold = 0.3  # Only show results with >30% relevance
+        relevance_threshold = 0.1  # Lowered threshold to 10% relevance
         
         for i in range(len(results['documents'][0])):
             distance = results['distances'][0][i]

@@ -55,7 +55,7 @@ const DocumentList = ({ documents, selectedDocument, onDocumentSelect, onDocumen
           </div>
           <div>
             <h2 className="text-lg font-bold text-gray-900">Documents</h2>
-            <p className="text-xs text-gray-600">{documents.length} policy document{documents.length !== 1 ? 's' : ''}</p>
+            <p className="text-xs text-gray-600">{documents.length} document{documents.length !== 1 ? 's' : ''}</p>
           </div>
         </div>
         {documents.length > 0 && (
@@ -71,15 +71,15 @@ const DocumentList = ({ documents, selectedDocument, onDocumentSelect, onDocumen
             <FileText className="h-8 w-8 text-gray-400" />
           </div>
           <h3 className="text-base font-medium text-gray-900 mb-1">No documents yet</h3>
-          <p className="text-sm text-gray-500">Upload your first policy to get started</p>
+          <p className="text-sm text-gray-500">Upload your first document to get started</p>
         </div>
       ) : (
         <div className="space-y-3 max-h-96 overflow-y-auto">
           {documents.map((doc) => (
             <div
-              key={doc.filename}
+              key={doc.document_id}
               className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
-                selectedDocument?.filename === doc.filename
+                selectedDocument?.document_id === doc.document_id
                   ? 'border-blue-500 bg-blue-50 shadow-md'
                   : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 hover:shadow-sm'
               }`}
@@ -132,7 +132,7 @@ const DocumentList = ({ documents, selectedDocument, onDocumentSelect, onDocumen
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleDelete(doc.filename, doc.filename);
+                    handleDelete(doc.document_id, doc.filename);
                   }}
                   className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-all duration-200 flex-shrink-0"
                 >

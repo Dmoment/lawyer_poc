@@ -19,7 +19,7 @@ const QueryInterface = ({ selectedDocument, documents }) => {
     try {
       const queryData = {
         question: query,
-        document_id: selectedDocument?.filename,
+        document_id: selectedDocument?.document_id,
         include_citations: true,
         max_citations: 5
       };
@@ -48,7 +48,7 @@ const QueryInterface = ({ selectedDocument, documents }) => {
           </div>
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Ask Questions</h2>
-            <p className="text-sm text-gray-600">Get AI-powered answers from your policy documents</p>
+            <p className="text-sm text-gray-600">Get AI-powered answers from your documents</p>
           </div>
         </div>
         
@@ -78,7 +78,7 @@ const QueryInterface = ({ selectedDocument, documents }) => {
               onChange={(e) => setQuery(e.target.value)}
               placeholder={
                 selectedDocument 
-                  ? "Ask a question about the selected insurance policy...\n\nExample: What is the coverage limit for physiotherapy?"
+                  ? "Ask a question about the selected document...\n\nExample: What is the main topic of this document?"
                   : "Select a document first to ask questions"
               }
               disabled={!selectedDocument || loading}
@@ -117,7 +117,7 @@ const QueryInterface = ({ selectedDocument, documents }) => {
               </div>
               <div>
                 <h3 className="text-2xl font-bold text-gray-900">AI Response</h3>
-                <p className="text-sm text-gray-600">Generated from your policy document</p>
+                <p className="text-sm text-gray-600">Generated from your document</p>
               </div>
             </div>
             <div className="flex items-center space-x-6 text-sm">
