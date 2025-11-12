@@ -6,9 +6,9 @@ from models import QueryResponse, Citation, QueryRequest
 from document_processor import DocumentProcessor
 
 class RAGSystem:
-    def __init__(self):
+    def __init__(self, document_processor: DocumentProcessor | None = None):
         self.config = Config()
-        self.document_processor = DocumentProcessor()
+        self.document_processor = document_processor or DocumentProcessor()
         
         # Configure Gemini
         genai.configure(api_key=self.config.GOOGLE_API_KEY)

@@ -19,31 +19,43 @@ class DocumentProcessor:
         
         self._initialize_chroma()
 
+    def _create_inmemory_client(self):
+        return chromadb.Client(Settings(anonymized_telemetry=False))
+
+    def _create_collection(self, client):
+        return client.get_or_create_collection(
+            name="insurance_documents",
+            metadata={"hnsw:space": "cosine"}
+        )
+
+    def _fallback_to_memory(self, reason: str = ""):
+        if reason:
+            print(f"Switching Chroma to in-memory mode due to: {reason}")
+        else:
+            print("Switching Chroma to in-memory mode.")
+
+        self.is_persistent = False
+        self.chroma_client = self._create_inmemory_client()
+        self.collection = self._create_collection(self.chroma_client)
+
     def _initialize_chroma(self):
         """Create or re-create the Chroma client/collection with retries."""
-        os.makedirs(self.config.CHROMA_PERSIST_DIRECTORY, exist_ok=True)
+        target_path = self.config.CHROMA_PERSIST_DIRECTORY.strip() if self.config.CHROMA_PERSIST_DIRECTORY else ""
+        self.is_persistent = bool(target_path)
+
+        if self.is_persistent:
+            os.makedirs(target_path, exist_ok=True)
 
         try:
-            self.chroma_client = chromadb.PersistentClient(
-                path=self.config.CHROMA_PERSIST_DIRECTORY
-            )
-            self.collection = self.chroma_client.get_or_create_collection(
-                name="insurance_documents",
-                metadata={"hnsw:space": "cosine"}
-            )
+            if self.is_persistent:
+                self.chroma_client = chromadb.PersistentClient(path=target_path)
+            else:
+                raise ValueError("Persistent storage disabled, using in-memory client")
         except Exception as e:
-            print(f"ChromaDB initialization error: {e}")
-            if os.path.exists(self.config.CHROMA_PERSIST_DIRECTORY):
-                shutil.rmtree(self.config.CHROMA_PERSIST_DIRECTORY)
-            os.makedirs(self.config.CHROMA_PERSIST_DIRECTORY, exist_ok=True)
+            self._fallback_to_memory(str(e))
+            return
 
-            self.chroma_client = chromadb.PersistentClient(
-                path=self.config.CHROMA_PERSIST_DIRECTORY
-            )
-            self.collection = self.chroma_client.get_or_create_collection(
-                name="insurance_documents",
-                metadata={"hnsw:space": "cosine"}
-            )
+        self.collection = self._create_collection(self.chroma_client)
 
     def reset_storage(self):
         """Remove all stored embeddings and reset the persistence store."""
@@ -53,7 +65,7 @@ class DocumentProcessor:
             # Collection may not exist yet or delete may fail if corrupted
             pass
 
-        if os.path.exists(self.config.CHROMA_PERSIST_DIRECTORY):
+        if self.is_persistent and os.path.exists(self.config.CHROMA_PERSIST_DIRECTORY):
             shutil.rmtree(self.config.CHROMA_PERSIST_DIRECTORY, ignore_errors=True)
 
         self._initialize_chroma()
@@ -155,12 +167,18 @@ class DocumentProcessor:
                 ids=ids
             )
         except Exception as e:
-            # Handle compaction/metadata corruption
+            # Handle compaction/metadata corruption / read-only issues
             error_message = str(e).lower()
-            if "compaction" in error_message or "metadata segment" in error_message:
+            if "readonly" in error_message or "read-only" in error_message:
+                self._fallback_to_memory("persistent storage opened read-only")
+                self.collection.add(
+                    embeddings=embeddings,
+                    documents=chunk_contents,
+                    metadatas=metadatas,
+                    ids=ids
+                )
+            elif "compaction" in error_message or "metadata segment" in error_message:
                 self.reset_storage()
-
-                # Retry add with fresh collection
                 self.collection.add(
                     embeddings=embeddings,
                     documents=chunk_contents,
