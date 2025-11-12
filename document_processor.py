@@ -166,6 +166,7 @@ class DocumentProcessor:
                 metadatas=metadatas,
                 ids=ids
             )
+            print(f"[Chroma] Added {len(chunk_contents)} chunks for document {document_id}. Total count: {self.collection.count()}")
         except Exception as e:
             # Handle compaction/metadata corruption / read-only issues
             error_message = str(e).lower()
@@ -177,6 +178,7 @@ class DocumentProcessor:
                     metadatas=metadatas,
                     ids=ids
                 )
+                print(f"[Chroma] Added {len(chunk_contents)} chunks (memory fallback) for document {document_id}. Total count: {self.collection.count()}")
             elif "compaction" in error_message or "metadata segment" in error_message:
                 self.reset_storage()
                 self.collection.add(
@@ -185,6 +187,7 @@ class DocumentProcessor:
                     metadatas=metadatas,
                     ids=ids
                 )
+                print(f"[Chroma] Added {len(chunk_contents)} chunks after reset for document {document_id}. Total count: {self.collection.count()}")
             else:
                 raise
         
@@ -229,7 +232,13 @@ class DocumentProcessor:
                     "relevance_score": relevance_score
                 }
                 formatted_results.append(result)
-        
+        print(
+            f"[Chroma] Query '{query[:50]}...' "
+            f"doc_filter={document_id} "
+            f"raw_results={len(results['documents'][0])} "
+            f"filtered_results={len(formatted_results)}"
+        )
+
         return formatted_results
     
     def get_citations(self, search_results: List[Dict[str, Any]]) -> List[Citation]:

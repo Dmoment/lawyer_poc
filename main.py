@@ -30,7 +30,7 @@ app.add_middleware(
 # Initialize services
 config = Config()
 document_processor = DocumentProcessor()
-rag_system = RAGSystem()
+rag_system = RAGSystem(document_processor=document_processor)
 
 # Create necessary directories
 os.makedirs(config.UPLOAD_DIRECTORY, exist_ok=True)
@@ -158,6 +158,12 @@ async def query_document(query_request: QueryRequest):
         # If document_id is provided, verify it exists
         if query_request.document_id and query_request.document_id not in documents_store:
             query_request.document_id = None
+
+        print(
+            f"[Query] question='{query_request.question[:50]}...', "
+            f"document_id={query_request.document_id}, "
+            f"available_docs={list(documents_store.keys())}"
+        )
         
         response = rag_system.query_document(query_request)
         return response
