@@ -3,26 +3,31 @@ import DocumentUpload from './components/DocumentUpload';
 import DocumentList from './components/DocumentList';
 import QueryInterface from './components/QueryInterface';
 import Header from './components/Header';
-import { getDocuments } from './services/api';
+import { getDocuments, resetSession, resetSessionBeacon } from './services/api';
+
+const UPLOAD_LIMIT = 3;
 
 function App() {
   const [documents, setDocuments] = useState([]);
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetchDocuments();
-  }, []);
+  const uploadCount = documents.length;
+  const uploadCounterLabel = `${Math.min(uploadCount, UPLOAD_LIMIT)}/${UPLOAD_LIMIT}`;
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       const docs = await getDocuments();
       setDocuments(docs);
     } catch (error) {
       console.error('Error fetching documents:', error);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   };
 
@@ -37,17 +42,61 @@ function App() {
     }
   };
 
+  useEffect(() => {
+    const initializeSession = async () => {
+      try {
+        setLoading(true);
+        await resetSession();
+        await fetchDocuments(false);
+      } catch (error) {
+        console.error('Error initializing session:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeSession();
+
+    const handleBeforeUnload = () => {
+      resetSessionBeacon();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      resetSessionBeacon();
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100">
       <Header />
       
       <main className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="flex flex-col gap-3 mb-6 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900">Trial usage</h1>
+            <p className="text-sm text-gray-600">
+              You can upload up to {UPLOAD_LIMIT} documents during the trial. Questions are unlimited.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-gray-700">Documents uploaded</span>
+            <div className="bg-white border border-gray-200 rounded-xl px-4 py-2 shadow-sm">
+              <span className="text-lg font-semibold text-gray-900">{uploadCounterLabel}</span>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Left Column - Document Management */}
           <div className="lg:col-span-1 space-y-6">
             <DocumentUpload 
               onDocumentUploaded={handleDocumentUploaded}
               loading={loading}
+              uploadLimit={UPLOAD_LIMIT}
+              uploadCount={uploadCount}
             />
             
             <DocumentList 

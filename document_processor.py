@@ -1,4 +1,5 @@
 import os
+import shutil
 import uuid
 from typing import List, Dict, Any, Tuple
 import PyPDF2
@@ -16,7 +17,12 @@ class DocumentProcessor:
         self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
         self.tokenizer = tiktoken.get_encoding("cl100k_base")
         
-        # Initialize ChromaDB with error handling
+        self._initialize_chroma()
+
+    def _initialize_chroma(self):
+        """Create or re-create the Chroma client/collection with retries."""
+        os.makedirs(self.config.CHROMA_PERSIST_DIRECTORY, exist_ok=True)
+
         try:
             self.chroma_client = chromadb.PersistentClient(
                 path=self.config.CHROMA_PERSIST_DIRECTORY
@@ -27,12 +33,10 @@ class DocumentProcessor:
             )
         except Exception as e:
             print(f"ChromaDB initialization error: {e}")
-            # Clear the database directory and retry
-            import shutil
             if os.path.exists(self.config.CHROMA_PERSIST_DIRECTORY):
                 shutil.rmtree(self.config.CHROMA_PERSIST_DIRECTORY)
             os.makedirs(self.config.CHROMA_PERSIST_DIRECTORY, exist_ok=True)
-            
+
             self.chroma_client = chromadb.PersistentClient(
                 path=self.config.CHROMA_PERSIST_DIRECTORY
             )
@@ -40,6 +44,19 @@ class DocumentProcessor:
                 name="insurance_documents",
                 metadata={"hnsw:space": "cosine"}
             )
+
+    def reset_storage(self):
+        """Remove all stored embeddings and reset the persistence store."""
+        try:
+            self.collection.delete(where={})
+        except Exception:
+            # Collection may not exist yet or delete may fail if corrupted
+            pass
+
+        if os.path.exists(self.config.CHROMA_PERSIST_DIRECTORY):
+            shutil.rmtree(self.config.CHROMA_PERSIST_DIRECTORY, ignore_errors=True)
+
+        self._initialize_chroma()
     
     def extract_text_from_pdf(self, file_path: str) -> List[Tuple[str, int]]:
         """Extract text from PDF with page numbers"""
@@ -129,13 +146,29 @@ class DocumentProcessor:
             metadatas.append(metadata)
             ids.append(f"{document_id}_{i}")
         
-        # Store in ChromaDB
-        self.collection.add(
-            embeddings=embeddings,
-            documents=chunk_contents,
-            metadatas=metadatas,
-            ids=ids
-        )
+        # Store in ChromaDB with self-healing for compaction errors
+        try:
+            self.collection.add(
+                embeddings=embeddings,
+                documents=chunk_contents,
+                metadatas=metadatas,
+                ids=ids
+            )
+        except Exception as e:
+            # Handle compaction/metadata corruption
+            error_message = str(e).lower()
+            if "compaction" in error_message or "metadata segment" in error_message:
+                self.reset_storage()
+
+                # Retry add with fresh collection
+                self.collection.add(
+                    embeddings=embeddings,
+                    documents=chunk_contents,
+                    metadatas=metadatas,
+                    ids=ids
+                )
+            else:
+                raise
         
         return {
             "document_id": document_id,

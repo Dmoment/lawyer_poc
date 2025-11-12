@@ -6,6 +6,7 @@ load_dotenv()
 class Config:
     # Google Gemini Configuration
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+    LLM_MODEL = os.getenv("LLM_MODEL", "gemini-flash-latest")
     
     # File Upload Configuration
     UPLOAD_DIRECTORY = os.getenv("UPLOAD_DIRECTORY", "./uploads")
@@ -21,7 +22,7 @@ class Config:
     
     # Model Configuration
     EMBEDDING_MODEL = "text-embedding-ada-002"
-    LLM_MODEL = "gemini-1.5-flash"
+    LLM_MODEL = "gemini-flash-latest"
     
     # Citation Configuration
     CITATION_PREFIX = "Page"

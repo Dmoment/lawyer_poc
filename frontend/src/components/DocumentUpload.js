@@ -1,13 +1,21 @@
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react';
+import { Upload, FileText, AlertCircle, CheckCircle, Lock } from 'lucide-react';
 import { uploadDocument } from '../services/api';
 
-const DocumentUpload = ({ onDocumentUploaded, loading }) => {
+const DocumentUpload = ({ onDocumentUploaded, loading, uploadLimit, uploadCount }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(null);
 
   const onDrop = useCallback(async (acceptedFiles) => {
+    if (uploadLimit && uploadCount >= uploadLimit) {
+      setUploadStatus({
+        type: 'error',
+        message: `Trial limit reached. You can upload a maximum of ${uploadLimit} documents.`,
+      });
+      return;
+    }
+
     const file = acceptedFiles[0];
     if (!file) return;
 
@@ -31,7 +39,7 @@ const DocumentUpload = ({ onDocumentUploaded, loading }) => {
       setUploading(false);
       setTimeout(() => setUploadStatus(null), 5000);
     }
-  }, [onDocumentUploaded]);
+  }, [onDocumentUploaded, uploadCount, uploadLimit]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -39,8 +47,11 @@ const DocumentUpload = ({ onDocumentUploaded, loading }) => {
       'application/pdf': ['.pdf']
     },
     maxFiles: 1,
-    disabled: uploading || loading
+    disabled: uploading || loading || (uploadLimit && uploadCount >= uploadLimit)
   });
+
+  const limitReached = uploadLimit && uploadCount >= uploadLimit;
+  const remainingUploads = uploadLimit ? Math.max(uploadLimit - uploadCount, 0) : null;
 
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4">
@@ -50,7 +61,9 @@ const DocumentUpload = ({ onDocumentUploaded, loading }) => {
         </div>
         <div>
           <h2 className="text-lg font-bold text-gray-900">Upload Document</h2>
-          <p className="text-xs text-gray-600">Add insurance policy PDFs for analysis</p>
+          <p className="text-xs text-gray-600">
+            Add your documents for instant analysis. Trial limit: {uploadLimit} uploads.
+          </p>
         </div>
       </div>
       
@@ -60,7 +73,7 @@ const DocumentUpload = ({ onDocumentUploaded, loading }) => {
           isDragActive
             ? 'border-blue-400 bg-blue-50 scale-[1.02] shadow-lg'
             : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50 hover:shadow-md'
-        } ${uploading || loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+        } ${(uploading || loading || limitReached) ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
         <input {...getInputProps()} />
         
@@ -73,13 +86,25 @@ const DocumentUpload = ({ onDocumentUploaded, loading }) => {
             <p className="text-base font-medium text-gray-700 mt-3">Processing document...</p>
             <p className="text-sm text-gray-500 mt-1">This may take a few moments</p>
           </div>
+        ) : limitReached ? (
+          <div className="flex flex-col items-center text-center">
+            <div className="bg-gradient-to-r from-gray-100 to-gray-200 rounded-full p-4 mb-4">
+              <Lock className="h-10 w-10 text-gray-500" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Trial upload limit reached
+            </h3>
+            <p className="text-sm text-gray-600 mb-3 max-w-sm">
+              You’ve uploaded {uploadLimit} documents. Contact us to unlock unlimited uploads.
+            </p>
+          </div>
         ) : (
           <div className="flex flex-col items-center">
             <div className="bg-gradient-to-r from-blue-100 to-indigo-100 rounded-full p-4 mb-4">
               <FileText className="h-10 w-10 text-blue-600" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              {isDragActive ? 'Drop your PDF here' : 'Upload Insurance Policy'}
+              {isDragActive ? 'Drop your PDF here' : 'Upload document'}
             </h3>
             <p className="text-sm text-gray-600 mb-3 max-w-sm">
               {isDragActive
@@ -91,6 +116,11 @@ const DocumentUpload = ({ onDocumentUploaded, loading }) => {
                 <span className="font-medium">Supported:</span> PDF files up to 50MB
               </p>
             </div>
+            {remainingUploads !== null && (
+              <p className="mt-3 text-xs text-gray-500">
+                {remainingUploads} upload{remainingUploads === 1 ? '' : 's'} remaining in your trial.
+              </p>
+            )}
           </div>
         )}
       </div>

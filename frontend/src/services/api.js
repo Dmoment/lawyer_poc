@@ -82,4 +82,35 @@ export const deleteDocument = async (documentId) => {
   return response.data;
 };
 
+export const resetSession = async () => {
+  await api.post('/session/reset');
+};
+
+export const resetSessionBeacon = () => {
+  const url = `${API_BASE_URL}/session/reset`;
+  const body = JSON.stringify({});
+
+  if (navigator.sendBeacon) {
+    try {
+      const blob = new Blob([body], { type: 'application/json' });
+      navigator.sendBeacon(url, blob);
+      return;
+    } catch (error) {
+      console.error('Beacon session reset failed, falling back to fetch:', error);
+    }
+  }
+
+  fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body,
+    keepalive: true,
+    mode: 'cors',
+  }).catch((error) => {
+    console.error('Session reset fetch failed:', error);
+  });
+};
+
 export default api;

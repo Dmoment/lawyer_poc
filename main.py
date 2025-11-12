@@ -1,3 +1,5 @@
+import asyncio
+import shutil
 from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -40,6 +42,38 @@ if os.path.exists("frontend/build"):
 
 # Store for document metadata
 documents_store = {}
+session_lock = asyncio.Lock()
+
+
+def _clean_directory(directory: str):
+    """Remove all files/subdirectories inside the given directory."""
+    if not os.path.exists(directory):
+        os.makedirs(directory, exist_ok=True)
+        return
+
+    for item in os.listdir(directory):
+        item_path = os.path.join(directory, item)
+        try:
+            if os.path.isfile(item_path) or os.path.islink(item_path):
+                os.remove(item_path)
+            else:
+                shutil.rmtree(item_path, ignore_errors=True)
+        except Exception as exc:
+            print(f"Failed to remove {item_path}: {exc}")
+
+
+def clear_document_data():
+    """Remove uploaded files, reset vector store, and clear in-memory state."""
+    documents_store.clear()
+    _clean_directory(config.UPLOAD_DIRECTORY)
+    document_processor.reset_storage()
+    rag_system.document_processor.reset_storage()
+
+
+@app.on_event("startup")
+async def startup_cleanup():
+    # Ensure a clean slate whenever the service restarts
+    clear_document_data()
 
 @app.get("/")
 async def read_root():
@@ -129,6 +163,15 @@ async def query_document(query_request: QueryRequest):
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing query: {str(e)}")
+
+
+@app.post("/session/reset")
+async def reset_session():
+    """Clear all uploaded documents and associated vector data."""
+    async with session_lock:
+        clear_document_data()
+    return {"status": "reset"}
+
 
 @app.get("/documents/{document_id}/summary")
 async def get_document_summary(document_id: str):
